@@ -26,10 +26,3 @@ def verify_token(token: str, secret_key: str, algorithms: list = ["HS256"]):
     except JWTError:
         raise ValueError("Invalid token")
     
-SECRET_KEY = "swiftchat-secret-2026"
-
-token = create_token({"username": "sarthak"}, SECRET_KEY)
-print("Token:", token)
-
-payload = verify_token(token, SECRET_KEY)
-print("Payload:", payload)
