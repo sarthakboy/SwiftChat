@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
 import RoomLogin from "./RoomLogin";
-import Chat from "./Chat";
-import './Register.css';
+import Chat from "./chat";
+import './Register.css';p
 // import './App.css';
 function App() {
   return (

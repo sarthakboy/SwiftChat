@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
+import os
 import httpx
 import auth
 from auth import SECRET_KEY, ALGORITHM, SUPABASE_KEY, SUPABASE_URL, HEADERS, router
