@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register & Login</title>
+</head>
+<body>
+  <h2>Register</h2>
+  <form id="registerForm">
+    <label>Username:</label>
+    <input type="text" id="register_username" required><br><br>
+
+    <label>Email:</label>
+    <input type="email" id="register_email" required><br><br>
+
+    <label>Password:</label>
+    <input type="password" id="register_password" required><br><br>
+
+    <button type="submit">Register</button>
+  </form>
+  <p id="register_status"></p>
+
+  <h2>Login</h2>
+  <form id="loginForm">
+    <label>Email:</label>
+    <input type="text" id="login_email" required><br><br>
+
+    <label>Password:</label>
+    <input type="password" id="login_password" required><br><br>
+
+    <button type="submit">Login</button>
+  </form>
+  <p id="login_status"></p>
+
+  <script>
+    // Register function
+    async function register(event) {
+      event.preventDefault();
+
+      const res = await fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("register_username").value,
+          email: document.getElementById("register_email").value,
+          password: document.getElementById("register_password").value
+        }),
+        credentials: "include"
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById("register_status").innerText =
+          "✅ " + data.message + " Redirecting...";
+        // Redirect to login page after successful registration
+        window.location.href = "/";
+      } else {
+        document.getElementById("register_status").innerText =
+          "❌ Registration failed: " + (data.detail || "Unknown error");
+      }
+    }
+
+    document.getElementById("registerForm").addEventListener("submit", register);
+
+    // Login function
+    async function login(event) {
+      event.preventDefault();
+
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("login_email").value,
+          password: document.getElementById("login_password").value
+        }),
+        credentials: "include"
+      });
+
+      if (!res.ok) {
+        document.getElementById("login_status").innerText = "❌ Login failed.";
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Login response JSON:", data);
+
+      if (data.access_token) {
+        localStorage.setItem("jwt", data.access_token);
+        document.getElementById("login_status").innerText =
+          "✅ Login successful. Redirecting...";
+        window.location.href = "/room_login.html";
+      } else {
+        document.getElementById("login_status").innerText =
+          "⚠️ No access_token found in response!";
+      }
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", login);
+  </script>
+</body>
+</html>

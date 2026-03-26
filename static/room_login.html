@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Room Login</title>
+</head>
+<body>
+  <h2>Choose a Room</h2>
+  <input type="text" id="room_id" maxlength="5" placeholder="Enter 5-char Room ID">
+  <button onclick="createRoom()">Create Room</button>
+  <button onclick="joinRoom()">Join Room</button>   
+  <p id="room_status"></p>
+
+  <div id="chat_section" style="display:none;">
+    <h2>Messages</h2>
+    <div id="messages"></div>
+    <input type="text" id="message_input" placeholder="Type message">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    
+    let currentRoom = null;
+    // ✅ jwtToken should be set after login in index.html
+    let jwtToken = localStorage.getItem("jwt") || "";
+console.log("JWT read from localStorage:", jwtToken); // Debug
+
+if (!jwtToken) {
+  alert("No JWT token found. Please log in again.");
+}
+let socket = new WebSocket(`ws://127.0.0.1:8000/chat/sarth?token=${jwtToken}`);
+
+
+    async function createRoom() {
+      const roomId = document.getElementById("room_id").value;
+      if (roomId.length !== 5 || !/^[a-zA-Z0-9]+$/.test(roomId)) {
+        document.getElementById("room_status").innerText = "Room ID must be 5 alphanumeric characters.";
+        return;
+      }
+
+      try {
+        const res = await fetch("/create_room/" + roomId + "?username=testuser", {
+          method: "POST"
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          document.getElementById("room_status").innerText = data.detail || "Error creating room.";
+          return;
+        }
+
+        currentRoom = data.room_id;
+        document.getElementById("room_status").innerText = "Room created: " + currentRoom;
+        document.getElementById("chat_section").style.display = "block";
+        connectChat();
+      } catch (err) {
+        document.getElementById("room_status").innerText = "Error: " + err.message;
+      }
+    }
+
+    async function joinRoom() {
+      const roomId = document.getElementById("room_id").value;
+      if (roomId.length !== 5 || !/^[a-zA-Z0-9]+$/.test(roomId)) {
+        document.getElementById("room_status").innerText = "Room ID must be 5 alphanumeric characters.";
+        return;
+      }
+
+      try {
+        const res = await fetch("/rooms/" + roomId);
+        const data = await res.json();
+
+        if (!res.ok || !data || data.length === 0) {
+          document.getElementById("room_status").innerText = "Invalid room.";
+          return;
+        }
+
+        currentRoom = roomId;
+        document.getElementById("room_status").innerText = "Joined room: " + currentRoom;
+        document.getElementById("chat_section").style.display = "block";
+        connectChat();
+      } catch (err) {
+        document.getElementById("room_status").innerText = "Error: " + err.message;
+      }
+    }
+
+    async function connectChat() {
+      try {
+        // Load history
+        const historyRes = await fetch("/messages/" + currentRoom);
+        const history = await historyRes.json();
+        const msgDiv = document.getElementById("messages");
+        msgDiv.innerHTML = "";
+        history.forEach(m => {
+          msgDiv.innerHTML += "<p>" + m.sender + ": " + m.content + "</p>";
+        });
+
+        // ✅ Connect WebSocket with token in query string
+        const wsUrl = "ws://" + window.location.host + "/chat/" + currentRoom + "?token=" + jwtToken;
+        console.log("🔗 Connecting WebSocket:", wsUrl);
+
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => {
+          console.log("✅ WebSocket opened to room:", currentRoom);
+          document.getElementById("room_status").innerText = "Connected to room: " + currentRoom;
+        };
+
+        socket.onmessage = (event) => {
+          console.log("📩 Message received:", event.data);
+          document.getElementById("messages").innerHTML += "<p>" + event.data + "</p>";
+        };
+
+        socket.onerror = (err) => {
+          console.error("❌ WebSocket error:", err);
+          document.getElementById("room_status").innerText = "WebSocket error: " + err.message;
+        };
+
+        socket.onclose = (event) => {
+          console.warn("⚠️ WebSocket closed:", event.code, event.reason);
+          document.getElementById("room_status").innerText = "Connection closed (" + event.code + ")";
+        };
+
+      } catch (err) {
+        console.error("❌ Exception creating WebSocket:", err);
+        document.getElementById("room_status").innerText = "Error: " + err.message;
+      }
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById("message_input").value;
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        console.log("📤 Sending message:", msg);
+        socket.send(msg);
+        document.getElementById("message_input").value = "";
+      } else {
+        console.warn("⚠️ WebSocket not open, cannot send message");
+      }
+    }
+  </script>
+</body>
+</html>
