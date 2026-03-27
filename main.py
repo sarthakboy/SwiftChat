@@ -10,11 +10,6 @@ from auth import SECRET_KEY, ALGORITHM, SUPABASE_KEY, SUPABASE_URL, HEADERS, rou
 from jose import jwt, JWTError
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
-app.mount("/", StaticFiles(directory="chat-frontend/build", html=True), name="frontend")
-@app.get("/{full_path:path}")
-async def serve_react_app(full_path: str):
-    index_path = os.path.join("chat-frontend", "build", "index.html")
-    return FileResponse(index_path)
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,12 +24,7 @@ app.include_router(router)
 # serve static files (frontend)
 
 
-@app.get("/")
-async def root():
-    return FileResponse("static/index.html")
-@app.get("/room_login.html")
-async def room_login():
-    return FileResponse("static/room_login.html")
+
 # -------------------------------
 # Connection Manager
 # -------------------------------
@@ -155,3 +145,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
         await websocket.close() 
         
         
+app.mount("/static", StaticFiles(directory="chat-frontend/build/static"), name="static")
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    # Avoid interfering with API endpoints (if they aren't prefixed)
+    # if full_path.startswith("api/"): ... 
+    return FileResponse("chat-frontend/build/index.html")

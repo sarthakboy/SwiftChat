@@ -1,29 +1,6 @@
-# Python
-__pycache__/
+__pycache__
 *.pyc
-*.pyo
-*.pyd
-*.db
-*.sqlite3
-
-# Virtual environments
-env/
-env311/
-venv/
-.venv/
-
-# Node / React
-chat-frontend/node_modules/
-chat-frontend/.npm/
-chat-frontend/.yarn/
-chat-frontend/build/
-
-# Git
-.git/
+.env
+.git
 .gitignore
-
-# OS / Editor
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+chat-frontend/node_modules

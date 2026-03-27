@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "./Chat.css";
 
-function chat() {
+function Chat() {
   const { roomId } = useParams();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -18,9 +18,11 @@ function chat() {
 
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/messages/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const headers = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        const res = await fetch(`/messages/${roomId}`, { headers });
         const data = await res.json();
         setMessages(data);
       } catch (err) {
@@ -29,7 +31,10 @@ function chat() {
     };
     fetchHistory();
 
-    const ws = new WebSocket(`ws://localhost:8000/chat/${roomId}?token=${token}`);
+    // Determine WebSocket protocol (ws or wss) based on current page protocol
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/chat/${roomId}?token=${token}`;
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => console.log("Connected to chat room:", roomId);
     ws.onmessage = (event) => {

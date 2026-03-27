@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./RoomLogin.css"; // Import the new CSS
+import "./RoomLogin.css";
 
 function RoomLogin() {
   const [roomId, setRoomId] = useState("");
@@ -13,14 +13,22 @@ function RoomLogin() {
     }
 
     const token = localStorage.getItem("jwt");
-    const username = localStorage.getItem("username"); // Must be stored at login
+    const username = localStorage.getItem("username");
+
+    if (!username) {
+      setStatus("❌ Username not found. Please log in again.");
+      return;
+    }
+
+    const headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
 
     try {
-      const res = await fetch(`http://localhost:8000/create_room/${roomId}?username=${username}`, {
+      const res = await fetch(`/create_room/${roomId}?username=${username}`, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
+        headers,
       });
 
       const data = await res.json();
@@ -44,11 +52,14 @@ function RoomLogin() {
 
     const token = localStorage.getItem("jwt");
 
+    const headers = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     try {
-      const res = await fetch(`http://localhost:8000/rooms/${roomId}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
+      const res = await fetch(`/rooms/${roomId}`, {
+        headers,
       });
 
       const data = await res.json();
