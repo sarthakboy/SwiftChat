@@ -30,6 +30,7 @@ function Login() {
 
     if (data.access_token) {
       localStorage.setItem("jwt", data.access_token);
+      localStorage.setItem("username", data.username);
       setStatus("✅ Login successful. Redirecting...");
       navigate("/roomlogin");   
     } else {

@@ -85,14 +85,18 @@ async def login(user: UserLogin, response: Response):
         print("Generated JWT token:", token)
 
         # Set JWT as cookie
-        # Use secure=True when deploying with HTTPS (Render uses HTTPS)
         response.set_cookie(
             key="jwt",
             value=token,
             httponly=True,
-            samesite="None",   # or "Lax" if same-site
-            secure=False,      # set to True in production
+            samesite="None",
+            secure=False,   # set True in production (Render)
             path="/"
         )
 
-        return {"access_token": token, "token_type": "bearer"}
+        # Return token and username
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "username": db_user["username"]   # <-- add this line
+        }
