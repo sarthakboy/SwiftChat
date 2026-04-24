@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
+# Load optional local env files in order of precedence
+load_dotenv(".env")
 load_dotenv(".secret")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")

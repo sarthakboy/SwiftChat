@@ -1,6 +1,10 @@
 __pycache__
 *.pyc
 .env
+.secret
 .git
 .gitignore
+.vscode
+env311
 chat-frontend/node_modules
+chat-frontend/build

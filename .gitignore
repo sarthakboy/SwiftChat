@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.secret
+env311/
+
+# Node
+chat-frontend/node_modules/
+chat-frontend/build/
+
+# IDE
+.vscode/
+
+# Docker
+Dockerfile
+docker-compose.override.yml
+
+# Misc
+.DS_Store

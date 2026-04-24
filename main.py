@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -41,8 +42,14 @@ class ConnectionManager:
             self.active_connections[room_id].remove(websocket)
 
     async def broadcast(self, message: str, room_id: str):
-        for ws in self.active_connections.get(room_id, []):
-            await ws.send_text(message)
+        if room_id in self.active_connections:
+            # Create a copy of the list to iterate safely
+            for ws in self.active_connections[room_id][:]:
+                try:
+                    await ws.send_text(message)
+                except Exception:
+                    # If sending fails, the connection is likely dead
+                    self.disconnect(ws, room_id)
 
 manager = ConnectionManager()
 
@@ -95,55 +102,49 @@ async def get_messages(room_id: str):
 # -------------------------------
 @app.websocket("/chat/{room_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str):
-    await websocket.accept()
-
-    # ✅ Read token from query parameter instead of cookies
+    # 1. Extract and Validate Token
     token = websocket.query_params.get("token")
-    print("WebSocket token received:", token)
-
     if not token:
-        print("❌ No JWT token provided in query params")
         await websocket.close(code=1008)
         return
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
-        print("✅ JWT decoded successfully, user:", username)
-    except JWTError as e:
-        print("❌ JWT decode failed:", str(e))
+    except JWTError:
         await websocket.close(code=1008)
         return
 
+    # 2. Register the connection in the Manager
+    await manager.connect(websocket, room_id)
+    
     try:
         while True:
+            # Receive message from the user
             data = await websocket.receive_text()
-            print(f"📩 Message from {username} in room {room_id}: {data}")
-            # ✅ Save message into PostgreSQL (Supabase REST API example)
+            
+            # 3. Persistence: Save to Supabase (PostgreSQL)
             async with httpx.AsyncClient() as client:
-                async with httpx.AsyncClient() as client:
-                    response = await client.post(
-                        f"{SUPABASE_URL}/rest/v1/message",
-                        headers={
-                            "apikey": SUPABASE_KEY,  # backend should use service_role
-                            "Authorization": f"Bearer {SUPABASE_KEY}",
-                            "Content-Type": "application/json"
-                        },
-                        json={
-                            "sender": username,                     # from JWT payload
-                            "content": data,                        # the chat text
-                            "created_at": datetime.utcnow().isoformat(),  # timestamp
-                            "room_id": room_id                    # must match your rooms table
-                        }
-                    )
-                    print("DB insert response:", response.status_code, response.text)
+                await client.post(
+                    f"{SUPABASE_URL}/rest/v1/message",
+                    headers=HEADERS,
+                    json={
+                        "sender": username,
+                        "content": data,
+                        "created_at": datetime.utcnow().isoformat(),
+                        "room_id": room_id
+                    }
+                )
 
-            # Broadcast or save message logic goes here
-            await websocket.send_text(f"{username}: {data}")
+            # 4. Real-time: Broadcast to everyone in the room
+            # Format as a string or JSON so the frontend can parse it
+            # Instead of f"{username}: {data}"
+                await manager.broadcast(json.dumps({"sender": username, "content": data}), room_id)
+
     except WebSocketDisconnect:
-        print(f"🔌 {username} disconnected from room {room_id}")
-        await websocket.close() 
-        
+        # 5. Cleanup on disconnect
+        manager.disconnect(websocket, room_id)
+        print(f"🔌 {username} left room {room_id}")        
         
 app.mount("/static", StaticFiles(directory="chat-frontend/build/static"), name="static")
 @app.get("/{full_path:path}")
@@ -151,3 +152,7 @@ async def serve_spa(full_path: str):
     # Avoid interfering with API endpoints (if they aren't prefixed)
     # if full_path.startswith("api/"): ... 
     return FileResponse("chat-frontend/build/index.html")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

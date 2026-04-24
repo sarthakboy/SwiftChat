@@ -1,24 +1,23 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+// Added Routes to the import
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
 import RoomLogin from "./RoomLogin";
 import Chat from "./Chat";
 import './Register.css';
-// import './App.css';
+
 function App() {
   return (
     <Router>
-      <nav>
-        <Link to="/register">Register</Link> | <Link to="/login">Login</Link>
-      </nav>
-      <Routes>
+      {/* 1. You must wrap Route components in <Routes> */}
+      <Routes> 
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Register />} /> {/* default route */}
+        <Route path="/" element={<Register />} /> 
         <Route path="/roomlogin" element={<RoomLogin />} />
-        <Route path="/chat/:roomId" element={<Chat />} /> {/* Chat component to be implemented */}
-
+        {/* The :roomId param matches the useParams() in your Chat.js */}
+        <Route path="/chat/:roomId" element={<Chat />} />
       </Routes>
     </Router>
   );
