@@ -33,8 +33,9 @@ function RoomLogin() {
     setStatus("");
 
     try {
+      const API_URL = process.env.REACT_APP_API_URL || "";
       const res = await fetch(
-        `http://localhost:8000/create_room/${roomId}?username=${username}`,
+        `${API_URL}/create_room/${roomId}?username=${username}`,
         { method: "POST", headers }
       );
       const data = await res.json();
@@ -70,7 +71,8 @@ function RoomLogin() {
     setStatus("");
 
     try {
-      const res = await fetch(`http://localhost:8000/rooms/${roomId}`, { headers });
+      const API_URL = process.env.REACT_APP_API_URL || "";
+      const res = await fetch(`${API_URL}/rooms/${roomId}`, { headers });
       const data = await res.json();
       if (data.length > 0) {
         setStatus("Room found! Joining...");

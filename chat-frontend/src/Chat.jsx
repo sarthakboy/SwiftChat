@@ -33,7 +33,8 @@ function Chat() {
 
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/messages/${roomId}`, {
+        const API_URL = process.env.REACT_APP_API_URL || "";
+        const res = await fetch(`${API_URL}/messages/${roomId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -44,7 +45,8 @@ function Chat() {
     };
     fetchHistory();
 
-    const wsUrl = `ws://localhost:8000/chat/${roomId}?token=${token}`;
+    const wsHost = process.env.REACT_APP_WS_URL || `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
+    const wsUrl = `${wsHost}/chat/${roomId}?token=${token}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
